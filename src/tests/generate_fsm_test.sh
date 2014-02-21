@@ -48,7 +48,8 @@ EXPECTED="`cat $OUTPUT_FILE`"
 if [ -z "$EXPECTED" ]; then die "Error reading $OUTPUT_FILE"; fi
 
 # Let's make sure the script works with python2.2 and above
-for PYTHON in "" "python2.2" "python2.3" "python2.4"; do
+# for PYTHON in "" "python2.2" "python2.3" "python2.4"; do
+for PYTHON in "" "python2.7"; do
   GENERATED="`$PYTHON $GENERATE_FSM $INPUT_FILE`"
   if [ -z "$GENERATED" ]; then die "Error running $GENERATE_FSM"; fi
 
