@@ -451,6 +451,16 @@ static void enter_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
     statemachine_start_record(ctx);
 }
 
+static void enter_start_or_empty_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    enter_tag_name(ctx, start, chr, end);
+}
+
+static void enter_end_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    enter_tag_name(ctx, start, chr, end);
+}
+
 /* Called when the parser exits the tag name in order to finalize the recording.
  *
  * It converts the tag name to lowercase, and if the tag was closed, just
@@ -465,9 +475,16 @@ static void exit_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
                   HTMLPARSER_MAX_STRING, statemachine_record_length(ctx));
 
     tolower_str(html->tag);
+}
 
-    if (html->tag[0] == '/')
-      html->tag[0] = '\0';
+static void exit_start_or_empty_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    exit_tag_name(ctx, start, chr, end);
+}
+
+static void exit_end_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    exit_tag_name(ctx, start, chr, end);
 }
 
 /* Called when the parser enters a new tag. Starts recording it's name into
@@ -578,6 +595,7 @@ static void in_state_value(statemachine_ctx *ctx, int start, char chr, int end)
  * To simplify the code, we treat RCDATA and CDATA sections the same since the
  * differences between them don't affect the context we are in.
  */
+
 static void tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
@@ -593,6 +611,24 @@ static void tag_close(statemachine_ctx *ctx, int start, char chr, int end)
       ctx->next_state = HTMLPARSER_STATE_INT_CDATA_TEXT;
       html->in_js = 0;
     }
+}
+
+static void start_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    /* Called at the end of a <start-tag> */
+    tag_close(ctx, start, chr, end);
+}
+
+static void end_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    /* Called at the end of an </end-tag> */
+    tag_close(ctx, start, chr, end);
+}
+
+static void empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    /* Called at the end of an <empty-tag/> */
+    tag_close(ctx, start, chr, end);
 }
 
 /* Called inside cdata blocks in order to parse the javascript.
@@ -706,14 +742,18 @@ static statemachine_definition *create_statemachine_definition()
   statemachine_definition_populate(def, htmlparser_state_transitions,
                                    htmlparser_states_internal_names);
 
-  statemachine_enter_state(def, HTMLPARSER_STATE_INT_TAG_NAME,
-                           enter_tag_name);
-  statemachine_exit_state(def, HTMLPARSER_STATE_INT_TAG_NAME, exit_tag_name);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_TAG_NAME, enter_start_or_empty_tag_name);
+  statemachine_exit_state(def, HTMLPARSER_STATE_INT_TAG_NAME, exit_start_or_empty_tag_name);
+
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_END_TAG_NAME, enter_end_tag_name);
+  statemachine_exit_state(def, HTMLPARSER_STATE_INT_END_TAG_NAME, exit_end_tag_name);
 
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_ATTR, enter_attr);
   statemachine_exit_state(def, HTMLPARSER_STATE_INT_ATTR, exit_attr);
 
-  statemachine_enter_state(def, HTMLPARSER_STATE_INT_TAG_CLOSE, tag_close);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_START_TAG_CLOSE, start_tag_close);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_END_TAG_CLOSE, end_tag_close);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_EMPTY_TAG_CLOSE, empty_tag_close);
 
   /* CDATA states. We must list all cdata and javascript states here. */
   /* TODO(falmeida): Declare this list in htmlparser_fsm.config so it doesn't
