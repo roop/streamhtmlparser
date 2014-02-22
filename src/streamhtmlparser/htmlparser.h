@@ -190,6 +190,9 @@ typedef struct htmlparser_ctx_s {
   /* Note: Callbacks are not copied when copying the htmlparser context */
   void *callback_context;
   generic_callback_func on_enter_possible_tag_or_comment;
+  generic_callback_func on_cancel_possible_tag_or_comment;
+  generic_callback_func on_exit_tag;
+  generic_callback_func on_exit_comment;
   tag_callback_func on_exit_start_tag;
   tag_callback_func on_exit_end_tag;
   tag_callback_func on_exit_empty_tag;

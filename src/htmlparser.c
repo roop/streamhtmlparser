@@ -625,6 +625,9 @@ static void start_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
 
+    if (html->on_exit_tag) {
+        (*(html->on_exit_tag))(html->callback_context);
+    }
     if (html->on_exit_start_tag) {
         (*(html->on_exit_start_tag))(html->tag, html->callback_context);
     }
@@ -636,6 +639,9 @@ static void end_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
 
+    if (html->on_exit_tag) {
+        (*(html->on_exit_tag))(html->callback_context);
+    }
     if (html->on_exit_end_tag) {
         (*(html->on_exit_end_tag))(html->tag, html->callback_context);
     }
@@ -651,11 +657,55 @@ static void empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
 
+    if (html->on_exit_tag) {
+        (*(html->on_exit_tag))(html->callback_context);
+    }
     if (html->on_exit_empty_tag) {
         (*(html->on_exit_empty_tag))(html->tag, html->callback_context);
     }
 
     html->tag[0] = '\0';
+}
+
+/* Called when entering text.
+ * We use this to detect cases where what we expected to be a tag or comment
+ * turns out to be not so. */
+
+static void enter_text(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
+    assert(html != NULL);
+
+    int extern_start = state_external(start);
+    if (extern_start == HTMLPARSER_STATE_TAG) {
+        /* Invalid char encountered in what we guessed was a tag */
+        if (html->on_cancel_possible_tag_or_comment) {
+            (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
+        }
+    } else if (extern_start == HTMLPARSER_STATE_COMMENT) {
+        if (chr == '>') {
+            /* End of a valid comment */
+            if (html->on_exit_comment) {
+                (*(html->on_exit_comment))(html->callback_context);
+            }
+        } else {
+            /* Invalid char encountered in what we guessed was a comment */
+            if (html->on_cancel_possible_tag_or_comment) {
+                (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
+            }
+        }
+    } else if ((start == HTMLPARSER_STATE_INT_DECLARATION_START) ||
+               (start == HTMLPARSER_STATE_INT_COMMENT_OPEN)) {
+        /* Invalid char encountered in what we guessed was a comment or declaration */
+        if (html->on_cancel_possible_tag_or_comment) {
+            (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
+        }
+    } else if (start == HTMLPARSER_STATE_INT_DECLARATION_BODY) {
+        /* End of valid declaration */
+        if (html->on_cancel_possible_tag_or_comment) {
+            (*(html->on_cancel_possible_tag_or_comment))(html->on_cancel_possible_tag_or_comment);
+        }
+    }
 }
 
 /* Called inside cdata blocks in order to parse the javascript.
@@ -782,6 +832,8 @@ static statemachine_definition *create_statemachine_definition()
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_END_TAG_CLOSE, end_tag_close);
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_EMPTY_TAG_CLOSE, empty_tag_close);
 
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_TEXT, enter_text);
+
   /* CDATA states. We must list all cdata and javascript states here. */
   /* TODO(falmeida): Declare this list in htmlparser_fsm.config so it doesn't
    * go out of sync.
@@ -869,6 +921,9 @@ htmlparser_ctx *htmlparser_new()
 
   html->callback_context = 0;
   html->on_enter_possible_tag_or_comment = 0;
+  html->on_cancel_possible_tag_or_comment = 0;
+  html->on_exit_tag = 0;
+  html->on_exit_comment = 0;
   html->on_exit_start_tag = 0;
   html->on_exit_end_tag = 0;
   html->on_exit_empty_tag = 0;
@@ -897,6 +952,9 @@ void htmlparser_copy(htmlparser_ctx *dst, const htmlparser_ctx *src)
 
   dst->callback_context = 0;
   dst->on_enter_possible_tag_or_comment = 0;
+  dst->on_cancel_possible_tag_or_comment = 0;
+  dst->on_exit_tag = 0;
+  dst->on_exit_comment = 0;
   dst->on_exit_start_tag = 0;
   dst->on_exit_end_tag = 0;
   dst->on_exit_empty_tag = 0;
