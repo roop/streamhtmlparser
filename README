@@ -1,4 +1,8 @@
+Original streamhtmlparser:
 Copyright 2008 Google Inc. All Rights Reserved.
+
+Detecting start/end tags, registering callbacks:
+Copyright 2014 Roopesh Chander <roop@roopc.net>. All Rights Reserved.
 
 This directory contains an implementation of an html context scanner with no
 lookahead. Its purpose is to scan an html stream and provide context

@@ -1,5 +1,10 @@
+Original streamhtmlparser:
 Copyright (c) 2006, Google Inc.
 All rights reserved.
+
+Detecting start/end tags, registering callbacks:
+Copyright 2014 Roopesh Chander <roop@roopc.net>.
+All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
