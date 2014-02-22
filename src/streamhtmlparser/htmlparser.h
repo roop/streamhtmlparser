@@ -140,6 +140,9 @@ void entityfilter_copy(entityfilter_ctx *dst, entityfilter_ctx *src);
 const char *entityfilter_process(entityfilter_ctx *ctx, char c);
 
 
+typedef void (*generic_callback_func) (void *callback_context);
+typedef void (*tag_callback_func) (const char *tag_name, void *callback_context);
+
 /* html parser */
 
 /* Stores the context of the html parser.
@@ -182,6 +185,14 @@ typedef struct htmlparser_ctx_s {
 
   /* Contents of the current value capped to HTMLPARSER_MAX_STRING. */
   char value[HTMLPARSER_MAX_STRING];
+
+  /* Callbacks */
+  /* Note: Callbacks are not copied when copying the htmlparser context */
+  void *callback_context;
+  generic_callback_func on_enter_possible_tag_or_comment;
+  tag_callback_func on_exit_start_tag;
+  tag_callback_func on_exit_end_tag;
+  tag_callback_func on_exit_empty_tag;
 
 } htmlparser_ctx;
 

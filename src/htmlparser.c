@@ -449,6 +449,10 @@ static void enter_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
 
     html->tag[0] = '\0';
     statemachine_start_record(ctx);
+
+    if (html->on_enter_possible_tag_or_comment) {
+        (*(html->on_enter_possible_tag_or_comment))(html->callback_context);
+    }
 }
 
 static void enter_start_or_empty_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
@@ -617,6 +621,13 @@ static void start_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     /* Called at the end of a <start-tag> */
     start_or_empty_tag_close(ctx, start, chr, end);
+
+    htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
+    assert(html != NULL);
+
+    if (html->on_exit_start_tag) {
+        (*(html->on_exit_start_tag))(html->tag, html->callback_context);
+    }
 }
 
 static void end_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
@@ -624,6 +635,10 @@ static void end_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
     /* Called at the end of an </end-tag> */
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
+
+    if (html->on_exit_end_tag) {
+        (*(html->on_exit_end_tag))(html->tag, html->callback_context);
+    }
 
     html->tag[0] = '\0';
 }
@@ -635,6 +650,10 @@ static void empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
+
+    if (html->on_exit_empty_tag) {
+        (*(html->on_exit_empty_tag))(html->tag, html->callback_context);
+    }
 
     html->tag[0] = '\0';
 }
@@ -848,6 +867,12 @@ htmlparser_ctx *htmlparser_new()
 
   htmlparser_reset(html);
 
+  html->callback_context = 0;
+  html->on_enter_possible_tag_or_comment = 0;
+  html->on_exit_start_tag = 0;
+  html->on_exit_end_tag = 0;
+  html->on_exit_empty_tag = 0;
+
   return html;
 }
 
@@ -870,6 +895,11 @@ void htmlparser_copy(htmlparser_ctx *dst, const htmlparser_ctx *src)
 
   entityfilter_copy(dst->entityfilter, src->entityfilter);
 
+  dst->callback_context = 0;
+  dst->on_enter_possible_tag_or_comment = 0;
+  dst->on_exit_start_tag = 0;
+  dst->on_exit_end_tag = 0;
+  dst->on_exit_empty_tag = 0;
 }
 
 /* Receives an htmlparser context and Returns the current html state.
