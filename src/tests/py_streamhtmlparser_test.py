@@ -324,12 +324,11 @@ class PyHtmlParserUnitTest(unittest.TestCase):
                      None)
     self.parser.Reset()
 
+    # On error, the updated parser assumes text state
     self.assertEqual(self.parser.Parse("<a href='http://www.google.com' ''>\n"),
-                     py_streamhtmlparser.HTML_STATE_ERROR)
-    self.assertEqual(self.parser.GetErrorMessage(),
-                     r"Unexpected character '\'' in state 'tag_space'")
+                     py_streamhtmlparser.HTML_STATE_TEXT)
 
-    self.parser.Reset()
+    # self.parser.Reset()
     self.assertEqual(self.parser.GetErrorMessage(),
                      None)
 

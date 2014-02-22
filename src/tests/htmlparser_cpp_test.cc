@@ -645,12 +645,10 @@ int main(int argc, char **argv) {
   HtmlParser html;
 
   EXPECT_EQ(html.GetErrorMessage(), (const char *)NULL);
+  // On error, the updated parser assumes text state
   EXPECT_EQ(html.Parse("<a href='http://www.google.com' ''>\n"),
-            HtmlParser::STATE_ERROR);
-
-  CHECK(!strcmp(html.GetErrorMessage(),
-                "Unexpected character '\\'' in state 'tag_space'"));
-  html.Reset();
+            HtmlParser::STATE_TEXT);
+  // html.Reset();
   EXPECT_EQ(html.GetErrorMessage(), (const char *)NULL);
 
   HtmlparserCppTest tester;
