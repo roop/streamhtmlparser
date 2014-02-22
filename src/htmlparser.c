@@ -596,7 +596,7 @@ static void in_state_value(statemachine_ctx *ctx, int start, char chr, int end)
  * differences between them don't affect the context we are in.
  */
 
-static void tag_close(statemachine_ctx *ctx, int start, char chr, int end)
+static void start_or_empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
@@ -622,7 +622,6 @@ static void start_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 static void end_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     /* Called at the end of an </end-tag> */
-    tag_close(ctx, start, chr, end);
 }
 
 static void empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
