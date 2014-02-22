@@ -449,10 +449,6 @@ static void enter_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
 
     html->tag[0] = '\0';
     statemachine_start_record(ctx);
-
-    if (html->on_enter_possible_tag_or_comment) {
-        (*(html->on_enter_possible_tag_or_comment))(html->callback_context);
-    }
 }
 
 static void enter_start_or_empty_tag_name(statemachine_ctx *ctx, int start, char chr, int end)
@@ -667,6 +663,18 @@ static void empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
     html->tag[0] = '\0';
 }
 
+/* Called to report that this could be the start of a tag or comment */
+
+static void possible_tag_or_comment(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
+    assert(html != NULL);
+
+    if (html->on_enter_possible_tag_or_comment) {
+        (*(html->on_enter_possible_tag_or_comment))(html->callback_context);
+    }
+}
+
 /* Called when entering text.
  * We use this to detect cases where what we expected to be a tag or comment
  * turns out to be not so. */
@@ -833,6 +841,7 @@ static statemachine_definition *create_statemachine_definition()
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_EMPTY_TAG_CLOSE, empty_tag_close);
 
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_TEXT, enter_text);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_TAG_START, possible_tag_or_comment);
 
   /* CDATA states. We must list all cdata and javascript states here. */
   /* TODO(falmeida): Declare this list in htmlparser_fsm.config so it doesn't
