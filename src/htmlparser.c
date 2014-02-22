@@ -616,18 +616,27 @@ static void start_or_empty_tag_close(statemachine_ctx *ctx, int start, char chr,
 static void start_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     /* Called at the end of a <start-tag> */
-    tag_close(ctx, start, chr, end);
+    start_or_empty_tag_close(ctx, start, chr, end);
 }
 
 static void end_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     /* Called at the end of an </end-tag> */
+    htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
+    assert(html != NULL);
+
+    html->tag[0] = '\0';
 }
 
 static void empty_tag_close(statemachine_ctx *ctx, int start, char chr, int end)
 {
     /* Called at the end of an <empty-tag/> */
-    tag_close(ctx, start, chr, end);
+    start_or_empty_tag_close(ctx, start, chr, end);
+
+    htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
+    assert(html != NULL);
+
+    html->tag[0] = '\0';
 }
 
 /* Called inside cdata blocks in order to parse the javascript.
