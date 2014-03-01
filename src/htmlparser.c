@@ -987,14 +987,14 @@ void htmlparser_copy(htmlparser_ctx *dst, const htmlparser_ctx *src)
 
   entityfilter_copy(dst->entityfilter, src->entityfilter);
 
-  dst->callback_context = 0;
-  dst->on_enter_possible_tag_or_comment = 0;
-  dst->on_cancel_possible_tag_or_comment = 0;
-  dst->on_exit_tag = 0;
-  dst->on_exit_comment = 0;
-  dst->on_exit_start_tag = 0;
-  dst->on_exit_end_tag = 0;
-  dst->on_exit_empty_tag = 0;
+  dst->callback_context = src->callback_context;
+  dst->on_enter_possible_tag_or_comment = src->on_enter_possible_tag_or_comment;
+  dst->on_cancel_possible_tag_or_comment = src->on_cancel_possible_tag_or_comment;
+  dst->on_exit_tag = src->on_exit_tag;
+  dst->on_exit_comment = src->on_exit_comment;
+  dst->on_exit_start_tag = src->on_exit_start_tag;
+  dst->on_exit_end_tag = src->on_exit_end_tag;
+  dst->on_exit_empty_tag = src->on_exit_empty_tag;
 }
 
 /* Receives an htmlparser context and Returns the current html state.
