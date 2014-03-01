@@ -670,6 +670,25 @@ static void possible_tag_or_comment(statemachine_ctx *ctx, int start, char chr, 
     htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
     assert(html != NULL);
 
+    int extern_start = state_external(start);
+    if ((extern_start == HTMLPARSER_STATE_TAG) ||
+        (extern_start == HTMLPARSER_STATE_ATTR) ||
+        (extern_start == HTMLPARSER_STATE_VALUE)) {
+        /* We encountered a '<' while inside what we thought as a tag, which means
+         * that what we thought as a tag is not a tag */
+        if (html->on_cancel_possible_tag_or_comment) {
+            (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
+        }
+    } else if ((start == HTMLPARSER_STATE_INT_DECLARATION_START) ||
+               (start == HTMLPARSER_STATE_INT_DECLARATION_BODY) ||
+               (start == HTMLPARSER_STATE_INT_COMMENT_OPEN)) {
+        /* We encountered a '<' while inside what we thought as a declaration or a comment,
+         * which means that what we thought as a comment is not a comment */
+        if (html->on_cancel_possible_tag_or_comment) {
+            (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
+        }
+    }
+
     if (html->on_enter_possible_tag_or_comment) {
         (*(html->on_enter_possible_tag_or_comment))(html->callback_context);
     }
