@@ -680,7 +680,6 @@ static void possible_tag_or_comment(statemachine_ctx *ctx, int start, char chr, 
             (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
         }
     } else if ((start == HTMLPARSER_STATE_INT_DECLARATION_START) ||
-               (start == HTMLPARSER_STATE_INT_DECLARATION_BODY) ||
                (start == HTMLPARSER_STATE_INT_COMMENT_OPEN)) {
         /* We encountered a '<' while inside what we thought as a declaration or a comment,
          * which means that what we thought as a comment is not a comment */
@@ -727,11 +726,19 @@ static void enter_text(statemachine_ctx *ctx, int start, char chr, int end)
         if (html->on_cancel_possible_tag_or_comment) {
             (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
         }
-    } else if (start == HTMLPARSER_STATE_INT_DECLARATION_BODY) {
-        /* End of valid declaration */
-        if (html->on_cancel_possible_tag_or_comment) {
-            (*(html->on_cancel_possible_tag_or_comment))(html->on_cancel_possible_tag_or_comment);
-        }
+    }
+}
+
+/* Called when what we thought was a tag or comment turns out to be
+ * a declaration or a processing instruction. */
+
+static void identified_as_declaration_or_pi(statemachine_ctx *ctx, int start, char chr, int end)
+{
+    htmlparser_ctx *html = CAST(htmlparser_ctx *, ctx->user);
+    assert(html != NULL);
+
+    if (html->on_cancel_possible_tag_or_comment) {
+        (*(html->on_cancel_possible_tag_or_comment))(html->callback_context);
     }
 }
 
@@ -861,6 +868,8 @@ static statemachine_definition *create_statemachine_definition()
 
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_TEXT, enter_text);
   statemachine_enter_state(def, HTMLPARSER_STATE_INT_TAG_START, possible_tag_or_comment);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_DECLARATION_BODY, identified_as_declaration_or_pi);
+  statemachine_enter_state(def, HTMLPARSER_STATE_INT_PI, identified_as_declaration_or_pi);
 
   /* CDATA states. We must list all cdata and javascript states here. */
   /* TODO(falmeida): Declare this list in htmlparser_fsm.config so it doesn't
