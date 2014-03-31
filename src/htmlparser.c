@@ -792,7 +792,6 @@ static void exit_state_cdata_may_close(statemachine_ctx *ctx, int start,
 
   if (strcasecmp(&cdata_close_tag[1], html->tag) == 0 &&
       (chr == '>' || html_isspace(chr))) { /* Make sure we have a delimiter */
-    html->tag[0] = '\0';  /* Empty tag mimicking exit_tag_name(). */
     html->in_js = 0;  /* In case this was a script tag. */
   } else {
     /* Does not close the CDATA section. Go back to CDATA. */
